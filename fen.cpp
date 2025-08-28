@@ -25,7 +25,7 @@ Board_FEN::Board_FEN(string fen_val)
 
 void Board_FEN::input_FEN(string fen_val)
 {
-    fen_val += BLANC; // Need this for (seamless) fen validation
+    fen_val += string(68, ' '); // End padding to prevent seg fault for small invalid FENs
     int cursor = 0;
     vector<vector<char>> inp_board(8, vector<char>(8, '.'));
     for (auto ch:fen_val)

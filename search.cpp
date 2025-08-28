@@ -27,7 +27,7 @@ string EvalBar::playOneMove(string &move, vector<vector<char>> brd, bool t, bool
         wcq = false;
         isEnp = false;
     }
-    else if (move == "O-O-O") // black castling queen side
+    else if (move == "O-O-O") // white castling queen side
     {
         brd[7][3] = 'R';
         brd[7][2] = 'K';
