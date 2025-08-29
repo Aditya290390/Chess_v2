@@ -155,9 +155,69 @@ int get_material(const vector<vector<char>> &board)
     return white_score + black_score;
 }
 
+string get_FEN(vector<vector<char>> brd, bool t, bool wck, bool wcq, bool bck, bool bcq, bool isEnp, string epS, int hfc, int fms)
+{
+    string str = "";
+    for (int i = 0; i < 8; ++i)
+    {
+        int gap = 0;
+        for (int j = 0; j < 8; ++j)
+        {
+            if (brd[i][j] == '.')
+            {
+                gap++;
+            }
+            else
+            {
+                if (gap > 0)
+                {
+                    str.push_back('0' + gap);
+                    gap = 0;
+                }
+                str.push_back(brd[i][j]);
+            }
+        }
+        if (gap > 0)
+        {
+            str.push_back('0' + gap);
+            gap = 0;
+        }
+        if (i < 7)
+        {
+            str.push_back('/');
+        }
+    }
+    str.push_back(' ');
+    if (t == 0)
+        str.push_back('w');
+    else
+        str.push_back('b');
+    str.push_back(' ');
+    if (wck)
+        str.push_back('K');
+    if (wcq)
+        str.push_back('Q');
+    if (bck)
+        str.push_back('k');
+    if (bcq)
+        str.push_back('q');
+    if (!(bcq || bck || wcq || wck))
+        str.push_back('-');
+    str.push_back(' ');
+    if (!isEnp)
+        str.push_back('-');
+    else
+        str += epS;
+    str.push_back(' ');
+    str += to_string(hfc);
+    str.push_back(' ');
+    str += to_string(fms);
+    return str;
+}
+
 string stdToV2(string fen, string std_move)
 {
-    Board_FEN Board(fen);
+    GameState Board(fen);
     vector<vector<char>> board = Board.return_board();
     bool turn = Board.return_turn();
     string v2_move;
@@ -596,4 +656,6 @@ string stdToV2(string fen, string std_move)
             }
         }
     }
+
+    return "";
 }

@@ -4,14 +4,27 @@ EvalBar::EvalBar(string f)
 {
     pst.init_tables();
     fen.input_FEN(f);
-    m.fetch_Moves(fen.board, fen.turn, fen.isEnPassant, fen.epSquare, fen.castle_options());
+    m.setupPinAndControl(fen.board, fen.turn, fen.isEnPassant, fen.epSquare, fen.castle_options());
 }
 
 map<int, map<string, pair<string, double>*>> MasterMap;
 map<int, vector<pair<string, double>*>> matMap;
 
-string EvalBar::playOneMove(string &move, vector<vector<char>> brd, bool t, bool wck, bool wcq, bool bck, bool bcq, bool isEnp, string epS, int hfc, int fms)
+string EvalBar::playOneMove(GameState board_fen, string& move)
 {
+    vector<vector<char>> brd = board_fen.return_board();
+    bool t = board_fen.return_turn();
+    int cas_opt = board_fen.castle_options();
+    bool wck = (cas_opt&8)!=0;
+    bool wcq = (cas_opt&4)!=0;
+    bool bck = (cas_opt&2)!=0;
+    bool bcq = (cas_opt&1)!=0;
+    bool isEnp = board_fen.return_ep();
+    string epS = board_fen.return_eps();
+    int hfc = board_fen.return_halfmoveclk();
+    int fms = board_fen.return_fullmoves();
+
+
     string curr_position = move.substr(1, 2);
     string next_position = move.substr(move.length() - 2, 2);
     pair<int,int> curr_ij, next_ij;
@@ -134,7 +147,7 @@ string EvalBar::playOneMove(string &move, vector<vector<char>> brd, bool t, bool
     }
     t = !t;
     // display_board(brd); // for testing purposes
-    return fen.get_FEN(brd, t, wck, wcq, bck, bcq, isEnp, epS, hfc, fms);
+    return get_FEN(brd, t, wck, wcq, bck, bcq, isEnp, epS, hfc, fms);
 }
 
 double EvalBar::complete_eval(EvalParams &pr)
@@ -194,13 +207,13 @@ pair<string, double> EvalBar::evalTree(string f, int d, int c) {
             vis.erase(vis.begin());
         }
     }
-    // if (d == 3 && c == 0) vis.clear();
+    
     if(d<=0){
          cout<<"Invalid depth for evaluation\n";
          return {"_____",0.0};
     }
-    // cout << f << " at depth: " << d << endl;
-    Board_FEN temp_fen(f);
+    
+    GameState temp_fen(f);
     Moves temp_Moves(temp_fen.board,temp_fen.return_turn(),temp_fen.return_ep(),temp_fen.return_eps(),temp_fen.castle_options());
     vector<string> my_moves = temp_Moves.valid_Moves();
     
@@ -222,14 +235,13 @@ pair<string, double> EvalBar::evalTree(string f, int d, int c) {
     }
 
     if(d==1){
-            int cas_opt=temp_fen.castle_options();
             pair<string,double> result={"_",0.0};
             // cout << my_moves.size() << "\n";
             for(auto move: my_moves){
                 //  cout << move << ' ';
-                string res=playOneMove(move,temp_fen.return_board(),temp_fen.return_turn(),((cas_opt&8)!=0),((cas_opt&4)!=0),((cas_opt&2)!=0),((cas_opt&1)!=0),temp_fen.return_ep(),temp_fen.return_eps(),temp_fen.return_halfmoveclk(),temp_fen.return_fullmoves());
+                string res=playOneMove(temp_fen, move);
                 //  cout << res << endl;
-                Board_FEN final_fen(res);
+                GameState final_fen(res);
                 //  cout << final_fen.get_FEN() << " ; ";
                 //  cout << final_fen.return_turn() << " " << final_fen.return_ep() << " " << final_fen.return_eps() << " " << final_fen.castle_options() << endl;
                 string tag = res.substr(0, res.length() - 4);
@@ -263,11 +275,9 @@ pair<string, double> EvalBar::evalTree(string f, int d, int c) {
             return result;
     }
 
-    int cas_opt=temp_fen.castle_options();
-
     pair<string,double> result={"_",0.0};
     for(auto move: my_moves){
-                string res=playOneMove(move,temp_fen.return_board(),temp_fen.return_turn(),((cas_opt&8)!=0),((cas_opt&4)!=0),((cas_opt&2)!=0),((cas_opt&1)!=0),temp_fen.return_ep(),temp_fen.return_eps(),temp_fen.return_halfmoveclk(),temp_fen.return_fullmoves());
+                string res=playOneMove(temp_fen, move);
                 string tag = res.substr(0, res.length() - 4);
                 pair<string,double> temp;
                 if (vis[tag].first == 0)
@@ -315,7 +325,7 @@ pair<string, double> EvalBar :: NewEvalTree(string BoardFen, int depth, int c, d
          return {"___",0.0};
     }
 
-    Board_FEN CurrentFENString(BoardFen);
+    GameState CurrentFENString(BoardFen);
     int mat = get_material(CurrentFENString.board);
     
     if (!MasterMap[depth].empty() && MasterMap[depth].find(BoardFen) != MasterMap[depth].end()) {
@@ -352,9 +362,8 @@ pair<string, double> EvalBar :: NewEvalTree(string BoardFen, int depth, int c, d
         // White kheltoy atta
         string MoveToBePlayed = MyMoves[0];
         double MaxScore = -inf;
-        int cas_opt = CurrentFENString.castle_options();
         for(auto move : MyMoves){
-            string res = playOneMove(move ,CurrentFENString.return_board(),CurrentFENString.return_turn(),((cas_opt&8)!=0),((cas_opt&4)!=0),((cas_opt&2)!=0),((cas_opt&1)!=0),CurrentFENString.return_ep(),CurrentFENString.return_eps(),CurrentFENString.return_halfmoveclk(),CurrentFENString.return_fullmoves());
+            string res = playOneMove(CurrentFENString, move);
             double PotentialScore;
             PotentialScore = NewEvalTree(res, depth-1, c, alpha, beta).second;
             if(PotentialScore > MaxScore){
@@ -377,9 +386,8 @@ pair<string, double> EvalBar :: NewEvalTree(string BoardFen, int depth, int c, d
         // Black kheltoy atta
         string MoveToBePlayed = MyMoves[0];
         double MinScore = inf;
-        int cas_opt = CurrentFENString.castle_options();
         for(auto move : MyMoves){
-            string res=playOneMove(move ,CurrentFENString.return_board(),CurrentFENString.return_turn(),((cas_opt&8)!=0),((cas_opt&4)!=0),((cas_opt&2)!=0),((cas_opt&1)!=0),CurrentFENString.return_ep(),CurrentFENString.return_eps(),CurrentFENString.return_halfmoveclk(),CurrentFENString.return_fullmoves());
+            string res = playOneMove(CurrentFENString, move);
             double PotentialScore;
             PotentialScore = NewEvalTree(res, depth-1, c, alpha, beta).second;
             if(PotentialScore < MinScore){
@@ -406,7 +414,7 @@ pair<string, AllEvalScores> EvalBar :: TrainingTree(string BoardFen, int depth, 
          return {"___", tapli};
     }
 
-    Board_FEN CurrentFENString(BoardFen);
+    GameState CurrentFENString(BoardFen);
     Moves CurrMoves(CurrentFENString.board,CurrentFENString.return_turn(),CurrentFENString.return_ep(),CurrentFENString.return_eps(),CurrentFENString.castle_options());
     vector<string> MyMoves = CurrMoves.valid_Moves();
     double CheckForEnd=evaluate_checkmate(CurrentFENString.return_board(), CurrMoves.return_oppControlSquares() , CurrMoves.valid_Moves(), CurrentFENString.return_turn(), BoardFen);
@@ -432,9 +440,8 @@ pair<string, AllEvalScores> EvalBar :: TrainingTree(string BoardFen, int depth, 
         string MoveToBePlayed = MyMoves[0];
         AllEvalScores MaxScore;
         MaxScore.TotalScore = -inf;
-        int cas_opt = CurrentFENString.castle_options();
         for(auto move : MyMoves){
-            string res = playOneMove(move ,CurrentFENString.return_board(),CurrentFENString.return_turn(),((cas_opt&8)!=0),((cas_opt&4)!=0),((cas_opt&2)!=0),((cas_opt&1)!=0),CurrentFENString.return_ep(),CurrentFENString.return_eps(),CurrentFENString.return_halfmoveclk(),CurrentFENString.return_fullmoves());
+            string res = playOneMove(CurrentFENString, move);
             AllEvalScores PotentialScore;
             PotentialScore = TrainingTree(res, depth-1, c, alpha, beta).second;
             if(PotentialScore.TotalScore > MaxScore.TotalScore){
@@ -453,9 +460,8 @@ pair<string, AllEvalScores> EvalBar :: TrainingTree(string BoardFen, int depth, 
         string MoveToBePlayed = MyMoves[0];
         AllEvalScores Minscore;
         Minscore.TotalScore = inf;
-        int cas_opt = CurrentFENString.castle_options();
         for(auto move : MyMoves){
-            string res=playOneMove(move ,CurrentFENString.return_board(),CurrentFENString.return_turn(),((cas_opt&8)!=0),((cas_opt&4)!=0),((cas_opt&2)!=0),((cas_opt&1)!=0),CurrentFENString.return_ep(),CurrentFENString.return_eps(),CurrentFENString.return_halfmoveclk(),CurrentFENString.return_fullmoves());
+            string res = playOneMove(CurrentFENString, move);
             AllEvalScores PotentialScore;
             PotentialScore = TrainingTree(res, depth-1, c, alpha, beta).second;
             if(PotentialScore.TotalScore < Minscore.TotalScore){

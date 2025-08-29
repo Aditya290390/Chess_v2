@@ -1,4 +1,4 @@
-#include "fen.h"
+#include "gamestate.h"
 #include "moves.h"
 #include "eval.h"
 #include "functions.h"
@@ -15,12 +15,11 @@ int material = 78;
 
 void gameTesting(string fen)
 {
-    Board_FEN v(fen);    
-    EvalBar lesgo(fen);
+    GameState gs(fen);    
+    EvalBar eb(fen);
     while (1)
     {
-        v.display_board_FEN();
-        int cas_opt = v.castle_options();
+        gs.display_board_FEN();
         string str;
         cout << "Enter your move: " << endl;
         cin >> str;
@@ -30,21 +29,21 @@ void gameTesting(string fen)
         #else
         system("clear");
         #endif
-        v.input_FEN(lesgo.playOneMove(str, v.return_board(),v.return_turn(),((cas_opt&8)!=0),((cas_opt&4)!=0),((cas_opt&2)!=0),((cas_opt&1)!=0),v.return_ep(),v.return_eps(),v.return_halfmoveclk(),v.return_fullmoves()));
-        int n_mat = get_material(v.return_board());
+        gs.input_FEN(eb.playOneMove(gs, str));
+        int n_mat = get_material(gs.return_board());
         if (n_mat < material && !matMap[material].empty())
         {
             for (auto it : matMap[material]) delete(it);
             matMap.erase(material);
         }
         material = n_mat;
-        string changed_str = v.get_FEN();
+        string changed_str = gs.get_FEN();
         cout << changed_str << endl;
         auto start = high_resolution_clock::now();
         int depth = 5;
         // if (get_material(v.return_board()) <= 20) depth = 4; 
         // pair<string, double> p = lesgo.evalTree(changed_str, depth, 0);
-        pair<string, double> p = lesgo.NewEvalTree(changed_str, depth, 0, -(inf+100), inf+100);
+        pair<string, double> p = eb.NewEvalTree(changed_str, depth, 0, -(inf+100), inf+100);
         auto stop = high_resolution_clock::now();
         if (p.first == "#")
         {
@@ -58,9 +57,8 @@ void gameTesting(string fen)
         }
         cout << "Computer's move: " << p.first << endl;
         cout << "Eval: " << p.second << endl;
-        cas_opt = v.castle_options();
-        v.input_FEN(lesgo.playOneMove(p.first, v.return_board(),v.return_turn(),((cas_opt&8)!=0),((cas_opt&4)!=0),((cas_opt&2)!=0),((cas_opt&1)!=0),v.return_ep(),v.return_eps(),v.return_halfmoveclk(),v.return_fullmoves()));
-        n_mat = get_material(v.return_board());
+        gs.input_FEN(eb.playOneMove(gs, p.first));
+        n_mat = get_material(gs.return_board());
         if (n_mat < material && !matMap[material].empty())
         {
             for (auto it : matMap[material]) delete(it);
@@ -69,7 +67,7 @@ void gameTesting(string fen)
         material = n_mat;
         auto duration = duration_cast<seconds>(stop - start);
         cout << "Executed in " << duration.count() << " seconds." << endl;
-        pair <string,double> breakmate = lesgo.evalTree(v.get_FEN(), 1);
+        pair <string,double> breakmate = eb.evalTree(gs.get_FEN(), 1);
         if (breakmate.first == "#")
         {
             cout << "CHECKMATE!" << endl;
@@ -81,19 +79,19 @@ void gameTesting(string fen)
             break;
         }
     }
-    v.display_board_FEN();
+    gs.display_board_FEN();
 }
 
 void positionTesting(string fen)
 {
-    Board_FEN v(fen);
+    GameState v(fen);
     v.display_board_FEN();
     /* Position Testing*/
     Moves m;
     bool turn = v.return_turn();
     vector<vector<char>> brd = v.return_board();
     pst.init_tables();
-    m.fetch_Moves(brd, turn, v.return_ep(), v.return_eps(), v.castle_options());
+    m.setupPinAndControl(brd, turn, v.return_ep(), v.return_eps(), v.castle_options());
     cout << setw(60) << left << "Evaluate Checkmate: " << evaluate_checkmate(v.return_board(), m.return_oppControlSquares(), m.valid_Moves(), turn, fen) << endl;
     cout << setw(60) << left << "Evaluate Material: " << evaluate_material(v.return_board()) << endl;
     cout << setw(60) << left << "Pawn Structure: " << evaluate_pawn_structure(reverseBoard(v.return_board()), m.return_controlSquares(), m.return_oppControlSquares(), turn, fen) << endl;

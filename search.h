@@ -125,7 +125,7 @@ struct EvalParams
     vector<string> validMoves; // from moves.h
     vector<string> validOppMoves; // from moves.h
 
-    EvalParams( Moves &mv, Board_FEN &bf, string &fen){
+    EvalParams( Moves &mv, GameState &bf, string &fen){
        f=fen;
        tag = fen.substr(0, fen.length() - 4);
        board=bf.board;
@@ -153,13 +153,13 @@ struct EvalParams
 class EvalBar
 {
     private:
-    Board_FEN fen; // Contains info about the board, turn, ep Square, Castling, etc.
+    GameState fen; // Contains info about the board, turn, ep Square, Castling, etc.
     Moves m; // Contains info about pieces controlling squares, valid Moves, etc.
     map<string, pair<bool, pair<string, double>>> vis;
     // map<string, double> memoFen;
     public:
     EvalBar(string f = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    string playOneMove(string &move, vector<vector<char>> brd, bool t, bool wck, bool wcq, bool bck, bool bcq, bool isEnp, string epS, int hfc, int fms); // Return FEN
+    string playOneMove(GameState board_fen, string &move); // Return FEN
     /*
         Assuming string move is always a valid legal move
         Update all the boolean params

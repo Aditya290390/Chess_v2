@@ -1,4 +1,4 @@
-#include "fen.h"
+#include "gamestate.h"
 #include "functions.h"
 
 void destroy_fen(string fen_val)
@@ -13,17 +13,17 @@ void destroy_fen(string fen_val)
     abort();
 }
 
-Board_FEN::Board_FEN()
+GameState::GameState()
 {
     default_FEN();
 }
 
-Board_FEN::Board_FEN(string fen_val)
+GameState::GameState(string fen_val)
 {
     input_FEN(fen_val);
 }
 
-void Board_FEN::input_FEN(string fen_val)
+void GameState::input_FEN(string fen_val)
 {
     fen_val += string(68, ' '); // End padding to prevent seg fault for small invalid FENs
     int cursor = 0;
@@ -197,7 +197,7 @@ void Board_FEN::input_FEN(string fen_val)
     }
     fullmoves = hfm;
 }
-void Board_FEN::default_FEN()
+void GameState::default_FEN()
 {
     isEnPassant = false;
     white_castle_kingside = true;
@@ -228,27 +228,27 @@ void Board_FEN::default_FEN()
         board.push_back(rank);
     }
 }
-vector<vector<char>> Board_FEN::return_board()
+vector<vector<char>> GameState::return_board()
 {
     return board;
 }
-bool Board_FEN::return_turn()
+bool GameState::return_turn()
 {
     return turn;
 }
-void Board_FEN::display_board_FEN()
+void GameState::display_board_FEN()
 {
     display_board(board);
 }
-bool Board_FEN::return_ep()
+bool GameState::return_ep()
 {
     return isEnPassant;
 }
-string Board_FEN::return_eps()
+string GameState::return_eps()
 {
     return epSquare;
 }
-int Board_FEN::castle_options()
+int GameState::castle_options()
 {
     /*
         ret has 4 bits
@@ -267,19 +267,19 @@ int Board_FEN::castle_options()
         ret |= 1;
     return ret;
 }
-int Board_FEN::return_halfmoveclk()
+int GameState::return_halfmoveclk()
 {
     return halfmove_clock;
 }
-int Board_FEN::return_fullmoves()
+int GameState::return_fullmoves()
 {
     return fullmoves;
 }
-string Board_FEN::getPos()
+string GameState::getPos()
 {
     return pos;
 }
-string Board_FEN::get_FEN()
+string GameState::get_FEN()
 {
     string str = "";
     for (int i = 0; i < 8; ++i)
@@ -336,64 +336,5 @@ string Board_FEN::get_FEN()
     str += to_string(halfmove_clock);
     str.push_back(' ');
     str += to_string(fullmoves);
-    return str;
-}
-string Board_FEN::get_FEN(vector<vector<char>> brd, bool t, bool wck, bool wcq, bool bck, bool bcq, bool isEnp, string epS, int hfc, int fms)
-{
-    string str = "";
-    for (int i = 0; i < 8; ++i)
-    {
-        int gap = 0;
-        for (int j = 0; j < 8; ++j)
-        {
-            if (brd[i][j] == '.')
-            {
-                gap++;
-            }
-            else
-            {
-                if (gap > 0)
-                {
-                    str.push_back('0' + gap);
-                    gap = 0;
-                }
-                str.push_back(brd[i][j]);
-            }
-        }
-        if (gap > 0)
-        {
-            str.push_back('0' + gap);
-            gap = 0;
-        }
-        if (i < 7)
-        {
-            str.push_back('/');
-        }
-    }
-    str.push_back(' ');
-    if (t == 0)
-        str.push_back('w');
-    else
-        str.push_back('b');
-    str.push_back(' ');
-    if (wck)
-        str.push_back('K');
-    if (wcq)
-        str.push_back('Q');
-    if (bck)
-        str.push_back('k');
-    if (bcq)
-        str.push_back('q');
-    if (!(bcq || bck || wcq || wck))
-        str.push_back('-');
-    str.push_back(' ');
-    if (!isEnp)
-        str.push_back('-');
-    else
-        str += epS;
-    str.push_back(' ');
-    str += to_string(hfc);
-    str.push_back(' ');
-    str += to_string(fms);
     return str;
 }

@@ -9,8 +9,8 @@ else
     RM = rm -f
 endif
 
-DEPS = fen.o functions.o moves.o sq_tables_eval.o eval.o search.o test.o
-DEPS2 = fen.o functions.o function_testing.o
+DEPS = gamestate.o functions.o moves.o sq_tables_eval.o eval.o search.o test.o
+DEPS2 = gamestate.o functions.o function_testing.o
 
 $(TARG): $(DEPS)
 	$(CC) $(CFLAGS) -o $@ $^

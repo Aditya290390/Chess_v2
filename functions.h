@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
-#include "fen.h"
+#include "gamestate.h"
 using namespace std;
 #pragma once
 /*
@@ -24,5 +24,7 @@ int piece_type(char ch, bool turn);
 vector<vector<char>> reverseBoard(const vector<vector<char>> &board);
 
 int get_material(const vector<vector<char>> &board);
+
+string get_FEN(vector<vector<char>> brd, bool t, bool wck, bool wcq, bool bck, bool bcq, bool isEnp, string epS, int hfc, int fms);
 
 string stdToV2(string fen, string std_move);
