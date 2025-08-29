@@ -338,3 +338,144 @@ string GameState::get_FEN()
     str += to_string(fullmoves);
     return str;
 }
+
+string GameState::simulateOneMove(string& move)
+{
+    vector<vector<char>> brd = return_board();
+    bool t = return_turn();
+    int cas_opt = castle_options();
+    bool wck = (cas_opt&8)!=0;
+    bool wcq = (cas_opt&4)!=0;
+    bool bck = (cas_opt&2)!=0;
+    bool bcq = (cas_opt&1)!=0;
+    bool isEnp = return_ep();
+    string epS = return_eps();
+    int hfc = return_halfmoveclk();
+    int fms = return_fullmoves();
+
+
+    string curr_position = move.substr(1, 2);
+    string next_position = move.substr(move.length() - 2, 2);
+    pair<int,int> curr_ij, next_ij;
+    if (move[0] != 'o' && move[0] != 'O') curr_ij = sij(curr_position);
+    if (move[0] != 'o' && move[0] != 'O') next_ij = sij(next_position);
+    if (move == "O-O") // white castling king side
+    {
+        brd[7][4] = '.';
+        brd[7][7] = '.';
+        brd[7][5] = 'R';
+        brd[7][6] = 'K';
+        wck = false;
+        wcq = false;
+        isEnp = false;
+    }
+    else if (move == "O-O-O") // white castling queen side
+    {
+        brd[7][3] = 'R';
+        brd[7][2] = 'K';
+        brd[7][0] = '.';
+        brd[7][1] = '.';
+        brd[7][4] = '.';
+        wck = false;
+        wcq = false;
+        isEnp = false;
+    }
+    else if (move == "o-o") // black castling king side
+    {
+        brd[0][5] = 'r';
+        brd[0][6] = 'k';
+        brd[0][4] = '.';
+        brd[0][7] = '.';
+        bck = false;
+        bcq = false;
+        isEnp = false;
+    }
+    else if (move == "o-o-o") // black castling queen side
+    {
+        brd[0][3] = 'r';
+        brd[0][2] = 'k';
+        brd[0][1] = '.';
+        brd[0][0] = '.';
+        brd[0][4] = '.';
+        bck = false;
+        bcq = false;
+        isEnp = false;
+    }
+    else if (move[0] == 'P' && (move.back() == 'Q' || move.back() == 'R' || move.back() == 'B' || move.back() == 'N')) // Promotion
+    {
+        brd[curr_ij.first][curr_ij.second] = '.';
+        next_ij = sij(move.substr(move.length() - 3, 2));
+        brd[0][next_ij.second] = move.back();
+    }
+    else if (move[0] == 'p' && (move.back() == 'q' || move.back() == 'r' || move.back() == 'b' || move.back() == 'n')) // Promotion
+    {
+        brd[curr_ij.first][curr_ij.second] = '.';
+        next_ij = sij(move.substr(move.length() - 3, 2));
+        brd[7][next_ij.second] = move.back();
+    }
+    else if (move[0] == 'P' || move[0] == 'p')
+    {
+        if (isEnp && (move[3] == 'y' || move[3] == 'Y'))
+        {
+            string passed_sq;
+            if (move[0] == 'P')
+            {
+                passed_sq = ijs(sij(epS).first + 1, sij(epS).second);
+            }
+            else
+            {
+                passed_sq = ijs(sij(epS).first - 1, sij(epS).second);
+            }
+            brd[sij(passed_sq).first][sij(passed_sq).second] = '.';
+            brd[curr_ij.first][curr_ij.second] = '.';
+            brd[next_ij.first][next_ij.second] = move[0];
+            isEnp = false;
+        }
+        else
+        {
+            brd[curr_ij.first][curr_ij.second] = '.';
+            brd[next_ij.first][next_ij.second] = move[0];
+            isEnp = false;
+            if (move[3] == 'Z')
+            {
+                if ((next_ij.second - 1 >= 0 && brd[next_ij.first][next_ij.second - 1] == 'p') ||
+                    (next_ij.second + 1 < 8 && brd[next_ij.first][next_ij.second + 1] == 'p'))
+                {
+                    isEnp = true;
+                    epS = ijs(next_ij.first + 1, next_ij.second);
+                }
+            }
+            else if(move[3]=='z')
+            {
+                if ((next_ij.second - 1 >= 0 && brd[next_ij.first][next_ij.second - 1] == 'P') ||
+                    (next_ij.second + 1 < 8 && brd[next_ij.first][next_ij.second + 1] == 'P'))
+                {
+                    isEnp = true;
+                    epS = ijs(next_ij.first - 1, next_ij.second);
+                }
+            }
+        }
+    }
+    else
+    {
+        brd[curr_ij.first][curr_ij.second] = '.';
+        brd[next_ij.first][next_ij.second] = move[0];
+        isEnp = false;
+        if (move[0] == 'K')
+        {
+            wck = 0; wcq = 0;
+        }
+        else if (move[0] == 'k')
+        {
+            bck = 0; bcq = 0;
+        }
+        else if (move[0] == 'R' && curr_position == "h1") wck = 0;
+        else if (move[0] == 'R' && curr_position == "a1") wcq = 0;
+        else if (move[0] == 'r' && curr_position == "h8") bck = 0;
+        else if (move[0] == 'r' && curr_position == "a8") bcq = 0;
+    }
+    t = !t;
+
+    // call the global get_FEN
+    return ::get_FEN(brd, t, wck, wcq, bck, bcq, isEnp, epS, hfc, fms);
+}

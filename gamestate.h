@@ -42,7 +42,11 @@ class GameState
     string getPos();
     string get_FEN();
 
-    
+    // Assumes string move is always a valid legal move
+    // Does not update any parameter, only returns FEN
+    // if move was played
+    string simulateOneMove(string& move);
+
     /*
         Note: In future, need to make the Game Class
         (and other req classes) to be a friend class,

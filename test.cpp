@@ -29,7 +29,7 @@ void gameTesting(string fen)
         #else
         system("clear");
         #endif
-        gs.input_FEN(eb.playOneMove(gs, str));
+        gs.input_FEN(gs.simulateOneMove(str));
         int n_mat = get_material(gs.return_board());
         if (n_mat < material && !matMap[material].empty())
         {
@@ -57,7 +57,7 @@ void gameTesting(string fen)
         }
         cout << "Computer's move: " << p.first << endl;
         cout << "Eval: " << p.second << endl;
-        gs.input_FEN(eb.playOneMove(gs, p.first));
+        gs.input_FEN(gs.simulateOneMove(p.first));
         n_mat = get_material(gs.return_board());
         if (n_mat < material && !matMap[material].empty())
         {

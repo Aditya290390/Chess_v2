@@ -10,146 +10,6 @@ EvalBar::EvalBar(string f)
 map<int, map<string, pair<string, double>*>> MasterMap;
 map<int, vector<pair<string, double>*>> matMap;
 
-string EvalBar::playOneMove(GameState board_fen, string& move)
-{
-    vector<vector<char>> brd = board_fen.return_board();
-    bool t = board_fen.return_turn();
-    int cas_opt = board_fen.castle_options();
-    bool wck = (cas_opt&8)!=0;
-    bool wcq = (cas_opt&4)!=0;
-    bool bck = (cas_opt&2)!=0;
-    bool bcq = (cas_opt&1)!=0;
-    bool isEnp = board_fen.return_ep();
-    string epS = board_fen.return_eps();
-    int hfc = board_fen.return_halfmoveclk();
-    int fms = board_fen.return_fullmoves();
-
-
-    string curr_position = move.substr(1, 2);
-    string next_position = move.substr(move.length() - 2, 2);
-    pair<int,int> curr_ij, next_ij;
-    if (move[0] != 'o' && move[0] != 'O') curr_ij = sij(curr_position);
-    if (move[0] != 'o' && move[0] != 'O') next_ij = sij(next_position);
-    if (move == "O-O") // white castling king side
-    {
-        brd[7][4] = '.';
-        brd[7][7] = '.';
-        brd[7][5] = 'R';
-        brd[7][6] = 'K';
-        wck = false;
-        wcq = false;
-        isEnp = false;
-    }
-    else if (move == "O-O-O") // white castling queen side
-    {
-        brd[7][3] = 'R';
-        brd[7][2] = 'K';
-        brd[7][0] = '.';
-        brd[7][1] = '.';
-        brd[7][4] = '.';
-        wck = false;
-        wcq = false;
-        isEnp = false;
-    }
-    else if (move == "o-o") // black castling king side
-    {
-        brd[0][5] = 'r';
-        brd[0][6] = 'k';
-        brd[0][4] = '.';
-        brd[0][7] = '.';
-        bck = false;
-        bcq = false;
-        isEnp = false;
-    }
-    else if (move == "o-o-o") // black castling queen side
-    {
-        brd[0][3] = 'r';
-        brd[0][2] = 'k';
-        brd[0][1] = '.';
-        brd[0][0] = '.';
-        brd[0][4] = '.';
-        bck = false;
-        bcq = false;
-        isEnp = false;
-    }
-    else if (move[0] == 'P' && (move.back() == 'Q' || move.back() == 'R' || move.back() == 'B' || move.back() == 'N')) // Promotion
-    {
-        brd[curr_ij.first][curr_ij.second] = '.';
-        next_ij = sij(move.substr(move.length() - 3, 2));
-        brd[0][next_ij.second] = move.back();
-    }
-    else if (move[0] == 'p' && (move.back() == 'q' || move.back() == 'r' || move.back() == 'b' || move.back() == 'n')) // Promotion
-    {
-        brd[curr_ij.first][curr_ij.second] = '.';
-        next_ij = sij(move.substr(move.length() - 3, 2));
-        brd[7][next_ij.second] = move.back();
-    }
-    else if (move[0] == 'P' || move[0] == 'p')
-    {
-        if (isEnp && (move[3] == 'y' || move[3] == 'Y'))
-        {
-            string passed_sq;
-            if (move[0] == 'P')
-            {
-                passed_sq = ijs(sij(epS).first + 1, sij(epS).second);
-            }
-            else
-            {
-                passed_sq = ijs(sij(epS).first - 1, sij(epS).second);
-            }
-            brd[sij(passed_sq).first][sij(passed_sq).second] = '.';
-            brd[curr_ij.first][curr_ij.second] = '.';
-            brd[next_ij.first][next_ij.second] = move[0];
-            isEnp = false;
-        }
-        else
-        {
-            brd[curr_ij.first][curr_ij.second] = '.';
-            brd[next_ij.first][next_ij.second] = move[0];
-            isEnp = false;
-            if (move[3] == 'Z')
-            {
-                if ((next_ij.second - 1 >= 0 && brd[next_ij.first][next_ij.second - 1] == 'p') ||
-                    (next_ij.second + 1 < 8 && brd[next_ij.first][next_ij.second + 1] == 'p'))
-                {
-                    isEnp = true;
-                    epS = ijs(next_ij.first + 1, next_ij.second);
-                }
-            }
-            else if(move[3]=='z')
-            {
-                if ((next_ij.second - 1 >= 0 && brd[next_ij.first][next_ij.second - 1] == 'P') ||
-                    (next_ij.second + 1 < 8 && brd[next_ij.first][next_ij.second + 1] == 'P'))
-                {
-                    isEnp = true;
-                    epS = ijs(next_ij.first - 1, next_ij.second);
-                }
-            }
-        }
-    }
-    else
-    {
-        brd[curr_ij.first][curr_ij.second] = '.';
-        brd[next_ij.first][next_ij.second] = move[0];
-        isEnp = false;
-        if (move[0] == 'K')
-        {
-            wck = 0; wcq = 0;
-        }
-        else if (move[0] == 'k')
-        {
-            bck = 0; bcq = 0;
-        }
-        else if (move[0] == 'R' && curr_position == "h1") wck = 0;
-        else if (move[0] == 'R' && curr_position == "a1") wcq = 0;
-        else if (move[0] == 'r' && curr_position == "h8") bck = 0;
-        else if (move[0] == 'r' && curr_position == "a8") bcq = 0;
-    }
-    t = !t;
-    // display_board(brd); // for testing purposes
-    return get_FEN(brd, t, wck, wcq, bck, bcq, isEnp, epS, hfc, fms);
-}
-
 double EvalBar::complete_eval(EvalParams &pr)
 {
     int material = get_material(pr.board);
@@ -213,8 +73,8 @@ pair<string, double> EvalBar::evalTree(string f, int d, int c) {
          return {"_____",0.0};
     }
     
-    GameState temp_fen(f);
-    Moves temp_Moves(temp_fen.board,temp_fen.return_turn(),temp_fen.return_ep(),temp_fen.return_eps(),temp_fen.castle_options());
+    GameState tempState(f);
+    Moves temp_Moves(tempState.board,tempState.return_turn(),tempState.return_ep(),tempState.return_eps(),tempState.castle_options());
     vector<string> my_moves = temp_Moves.valid_Moves();
     
     // if (d!=1) {
@@ -224,7 +84,7 @@ pair<string, double> EvalBar::evalTree(string f, int d, int c) {
     //     return {"#", inf};
     // }
 
-    double check_for_end=evaluate_checkmate(temp_fen.return_board(),temp_Moves.return_oppControlSquares(),temp_Moves.valid_Moves(),temp_fen.return_turn(),f);
+    double check_for_end=evaluate_checkmate(tempState.return_board(),temp_Moves.return_oppControlSquares(),temp_Moves.valid_Moves(),tempState.return_turn(),f);
     
     if(check_for_end==inf||check_for_end==-inf){
         return {"#",check_for_end};
@@ -236,14 +96,10 @@ pair<string, double> EvalBar::evalTree(string f, int d, int c) {
 
     if(d==1){
             pair<string,double> result={"_",0.0};
-            // cout << my_moves.size() << "\n";
             for(auto move: my_moves){
-                //  cout << move << ' ';
-                string res=playOneMove(temp_fen, move);
-                //  cout << res << endl;
+                string res = tempState.simulateOneMove(move);
                 GameState final_fen(res);
-                //  cout << final_fen.get_FEN() << " ; ";
-                //  cout << final_fen.return_turn() << " " << final_fen.return_ep() << " " << final_fen.return_eps() << " " << final_fen.castle_options() << endl;
+                
                 string tag = res.substr(0, res.length() - 4);
                 pair<string,double> temp;
                 temp.first=move;
@@ -261,7 +117,7 @@ pair<string, double> EvalBar::evalTree(string f, int d, int c) {
                     result=temp;
                     result.first=move;
                 }
-                else if(temp_fen.return_turn()){
+                else if(tempState.return_turn()){
                     if(result.second>temp.second){
                         result=temp;
                     }
@@ -277,7 +133,7 @@ pair<string, double> EvalBar::evalTree(string f, int d, int c) {
 
     pair<string,double> result={"_",0.0};
     for(auto move: my_moves){
-                string res=playOneMove(temp_fen, move);
+                string res = tempState.simulateOneMove(move);
                 string tag = res.substr(0, res.length() - 4);
                 pair<string,double> temp;
                 if (vis[tag].first == 0)
@@ -298,7 +154,7 @@ pair<string, double> EvalBar::evalTree(string f, int d, int c) {
                     result=temp;
                     result.first=move;
                 }
-                else if(temp_fen.return_turn()){
+                else if(tempState.return_turn()){
                         if(result.second>temp.second){
                             result=temp;
                             result.first=move;
@@ -325,18 +181,18 @@ pair<string, double> EvalBar :: NewEvalTree(string BoardFen, int depth, int c, d
          return {"___",0.0};
     }
 
-    GameState CurrentFENString(BoardFen);
-    int mat = get_material(CurrentFENString.board);
+    GameState CurrentState(BoardFen);
+    int mat = get_material(CurrentState.board);
     
     if (!MasterMap[depth].empty() && MasterMap[depth].find(BoardFen) != MasterMap[depth].end()) {
         return *MasterMap[depth][BoardFen];
     }
 
-    Moves CurrMoves(CurrentFENString.board,CurrentFENString.return_turn(),CurrentFENString.return_ep(),CurrentFENString.return_eps(),CurrentFENString.castle_options());
+    Moves CurrMoves(CurrentState.board,CurrentState.return_turn(),CurrentState.return_ep(),CurrentState.return_eps(),CurrentState.castle_options());
     vector<string> MyMoves = CurrMoves.valid_Moves();
 
     // check whether tapli has been received
-    double CheckForEnd=evaluate_checkmate(CurrentFENString.return_board(), CurrMoves.return_oppControlSquares() , CurrMoves.valid_Moves(), CurrentFENString.return_turn(), BoardFen);
+    double CheckForEnd=evaluate_checkmate(CurrentState.return_board(), CurrMoves.return_oppControlSquares() , CurrMoves.valid_Moves(), CurrentState.return_turn(), BoardFen);
     if(CheckForEnd== inf || CheckForEnd ==-inf){
         MasterMap[depth][BoardFen] = new pair<string, double> {"#", CheckForEnd};
         matMap[mat].push_back(MasterMap[depth][BoardFen]);
@@ -352,18 +208,18 @@ pair<string, double> EvalBar :: NewEvalTree(string BoardFen, int depth, int c, d
     }
 
     if(depth == 0){
-            EvalParams AllEvalParams(CurrMoves, CurrentFENString, BoardFen);
+            EvalParams AllEvalParams(CurrMoves, CurrentState, BoardFen);
             double CurrentScore = complete_eval(AllEvalParams);
             return {"_", CurrentScore};
     }
 
     // check kiska move hai 
-    if(CurrentFENString.return_turn() == 0){
+    if(CurrentState.return_turn() == 0){
         // White kheltoy atta
         string MoveToBePlayed = MyMoves[0];
         double MaxScore = -inf;
         for(auto move : MyMoves){
-            string res = playOneMove(CurrentFENString, move);
+            string res = CurrentState.simulateOneMove(move);
             double PotentialScore;
             PotentialScore = NewEvalTree(res, depth-1, c, alpha, beta).second;
             if(PotentialScore > MaxScore){
@@ -387,7 +243,7 @@ pair<string, double> EvalBar :: NewEvalTree(string BoardFen, int depth, int c, d
         string MoveToBePlayed = MyMoves[0];
         double MinScore = inf;
         for(auto move : MyMoves){
-            string res = playOneMove(CurrentFENString, move);
+            string res = CurrentState.simulateOneMove(move);
             double PotentialScore;
             PotentialScore = NewEvalTree(res, depth-1, c, alpha, beta).second;
             if(PotentialScore < MinScore){
@@ -414,10 +270,10 @@ pair<string, AllEvalScores> EvalBar :: TrainingTree(string BoardFen, int depth, 
          return {"___", tapli};
     }
 
-    GameState CurrentFENString(BoardFen);
-    Moves CurrMoves(CurrentFENString.board,CurrentFENString.return_turn(),CurrentFENString.return_ep(),CurrentFENString.return_eps(),CurrentFENString.castle_options());
+    GameState CurrentState(BoardFen);
+    Moves CurrMoves(CurrentState.board,CurrentState.return_turn(),CurrentState.return_ep(),CurrentState.return_eps(),CurrentState.castle_options());
     vector<string> MyMoves = CurrMoves.valid_Moves();
-    double CheckForEnd=evaluate_checkmate(CurrentFENString.return_board(), CurrMoves.return_oppControlSquares() , CurrMoves.valid_Moves(), CurrentFENString.return_turn(), BoardFen);
+    double CheckForEnd=evaluate_checkmate(CurrentState.return_board(), CurrMoves.return_oppControlSquares() , CurrMoves.valid_Moves(), CurrentState.return_turn(), BoardFen);
     if(CheckForEnd== inf || CheckForEnd ==-inf){
         AllEvalScores tapli;
         tapli.TotalScore = CheckForEnd;
@@ -430,18 +286,18 @@ pair<string, AllEvalScores> EvalBar :: TrainingTree(string BoardFen, int depth, 
     }
 
     if(depth == 0){
-            EvalParams AllEvalParams(CurrMoves, CurrentFENString, BoardFen);
+            EvalParams AllEvalParams(CurrMoves, CurrentState, BoardFen);
             AllEvalScores CurrentScore = complete_TrainingEval(AllEvalParams);
             return {"_", CurrentScore};
     }
 
-    if(CurrentFENString.return_turn() == 0){
+    if(CurrentState.return_turn() == 0){
         // White kheltoy atta
         string MoveToBePlayed = MyMoves[0];
         AllEvalScores MaxScore;
         MaxScore.TotalScore = -inf;
         for(auto move : MyMoves){
-            string res = playOneMove(CurrentFENString, move);
+            string res = CurrentState.simulateOneMove(move);
             AllEvalScores PotentialScore;
             PotentialScore = TrainingTree(res, depth-1, c, alpha, beta).second;
             if(PotentialScore.TotalScore > MaxScore.TotalScore){
@@ -461,7 +317,7 @@ pair<string, AllEvalScores> EvalBar :: TrainingTree(string BoardFen, int depth, 
         AllEvalScores Minscore;
         Minscore.TotalScore = inf;
         for(auto move : MyMoves){
-            string res = playOneMove(CurrentFENString, move);
+            string res = CurrentState.simulateOneMove(move);
             AllEvalScores PotentialScore;
             PotentialScore = TrainingTree(res, depth-1, c, alpha, beta).second;
             if(PotentialScore.TotalScore < Minscore.TotalScore){

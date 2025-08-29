@@ -159,15 +159,7 @@ class EvalBar
     // map<string, double> memoFen;
     public:
     EvalBar(string f = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    string playOneMove(GameState board_fen, string &move); // Return FEN
-    /*
-        Assuming string move is always a valid legal move
-        Update all the boolean params
-        if valid Move is enPassant, then capture that pawn also
-        and see if after Valid move, there is en passant
-        Castling also has to be updated
-        Turn also has to be updated
-    */
+
     pair<string, double> evalTree(string f, int d = DEPTH, int c = 0);  // d = depth, f = fen, isOpp = is it Opponent's turn or not, c = count of depth
     // First take the fen 'f' and send it to playOneMove
     // Retrieve the parameters in the function
