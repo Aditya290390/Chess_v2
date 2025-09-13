@@ -1,6 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <functional>
 #include "gamestate.h"
 using namespace std;
 #pragma once
@@ -28,3 +29,5 @@ int get_material(const vector<vector<char>> &board);
 string get_FEN(vector<vector<char>> brd, bool t, bool wck, bool wcq, bool bck, bool bcq, bool isEnp, string epS, int hfc, int fms);
 
 string stdToV2(string fen, string std_move);
+
+string convertToMv(string move, vector<vector<char>>& brd, bool t);

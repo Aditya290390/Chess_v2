@@ -659,3 +659,337 @@ string stdToV2(string fen, string std_move)
 
     return "";
 }
+
+// impossible moves are returned as empty string
+// still need to check if it is valid 
+string convertToMv(string move, vector<vector<char>>& brd, bool turn){
+    string mv = ""; // according to our convention
+
+    erase_if(move, [](char c){return c == '!' || c == '?'});
+
+    // castling
+    if(move == "O-O"){
+        mv = move;
+        if(turn == 1){
+            mv = "o-o";
+        }
+    }
+    else if(move == "O-O-O"){
+        mv = move;
+        if(turn == 1){
+            mv = "o-o-o";
+        }
+    }
+    
+    string suffix = "";
+    if(move.back() == '+' || move.back() == '#'){
+        suffix += move.back();
+        move.pop_back();
+    }
+
+    auto check_for_piece = [&brd](vector<pair<int, int>>& to_check, char piece_symbol) -> vector<string>{
+        vector<string> ans;
+        for(auto p : to_check){
+            if(p.first < 0 || p.first > 7 || p.second < 0 || p.second > 7)
+                continue;
+            if(brd[p.first][p.second] == piece_symbol){
+                string pos;
+                pos += p.second + 'a';
+                pos += 7 - p.first + '1';
+                ans.push_back(pos);
+            }
+        }
+        return ans;
+    };
+
+    // expects move to have +, #, = (promotions) removed
+    auto get_move = [&move, turn](std::function<vector<string>(int, int)> get_possible_origins, char symbol) -> string{
+        string mv;
+        mv.push_back(symbol);
+
+        int ind = move.length()-1;
+        int x = 7 - (move[ind--] - '1');
+        int y = move[ind--] - 'a';
+
+        string captureMarker = "";
+        if(move[ind] == 'x'){
+            if(turn == 0)
+                captureMarker.push_back('X');
+            else
+                captureMarker.push_back('x');
+            ind--;
+        }
+
+        string disambiguator = "";
+        while(ind >= 0 && move[ind] != symbol){
+            disambiguator.push_back(move[ind]);
+            ind--;
+        }
+        reverse(disambiguator.begin(), disambiguator.end());
+
+        vector<string> possible_origins = get_possible_origins(x, y);
+        string origin = "";
+        int num_possible_origins = 0;
+        for(auto str : possible_origins){
+            if(str.find(disambiguator) != string::npos){
+                origin = str;
+                num_possible_origins++;
+            }
+        }
+        if(num_possible_origins != 1){
+            cout<<"Multiple origins detected"<<endl;
+            abort();
+        }
+
+        mv += origin + captureMarker + move.substr(move.length()-2, 2);
+
+        return mv;
+    };
+
+    // Knight move
+    if(move[0] == 'N'){
+        char symbol = turn==0 ? 'N' : 'n';
+
+        auto possible_origin = [&brd, turn, symbol, &check_for_piece](int x, int y) -> vector<string>{
+            vector<pair<int, int>> to_check = {
+                {x+2, y+1},
+                {x+2, y-1},
+                {x-2, y+1},
+                {x-2, y-1},
+                {x+1, y+2},
+                {x+1, y-2},
+                {x-1, y+2},
+                {x-1, y-2},
+            };
+            return check_for_piece(to_check, symbol);
+        };
+
+        mv = get_move(possible_origin, symbol);
+    }
+
+    // Bishop move
+    else if(move[0] == 'B'){
+        char symbol = turn==0 ? 'B' : 'b';
+        
+        auto possible_origin = [&brd, turn, symbol, &check_for_piece](int x, int y) -> vector<string>{
+            vector<pair<int, int>> to_check;
+            int i, j;
+            if(x+y < 8){
+                i = x+y;
+                j = 0;
+            }
+            else{
+                i = 7;
+                j = x+y - 7;
+            }
+            while(i>=0 && i<8 && j>=0 && j<8){
+                to_check.push_back({i, j});
+                i--;
+                j++;
+            }
+
+            if(x-y < 0){
+                i = 0;
+                j = y-x;
+            }
+            else{
+                i = x-y;
+                j = 0;
+            }
+            while(i>=0 && i<8 && j>=0 && j<8){
+                to_check.push_back({i, j});
+                i++;
+                j++;
+            }
+            return check_for_piece(to_check, symbol);
+        };
+
+        mv = get_move(possible_origin, symbol);
+    }
+
+    // Rook move
+    else if(move[0] == 'R'){
+        char symbol = turn==0 ? 'R' : 'r';
+        
+        auto possible_origin = [&brd, turn, symbol, &check_for_piece](int x, int y) -> vector<string>{
+            vector<pair<int, int>> to_check;
+            int i, j;
+            i=x;
+            j=0;
+            while(i>=0 && i<8 && j>=0 && j<8){
+                to_check.push_back({i, j});
+                j++;
+            }
+
+            i=0;
+            j=y;
+            while(i>=0 && i<8 && j>=0 && j<8){
+                to_check.push_back({i, j});
+                i++;
+            }
+            return check_for_piece(to_check, symbol);
+        };
+
+        mv = get_move(possible_origin, symbol);
+    }
+
+    // Queen move
+    else if(move[0] == 'Q'){
+        char symbol = turn==0 ? 'Q' : 'q';
+        
+        auto possible_origin = [&brd, turn, symbol, &check_for_piece](int x, int y) -> vector<string>{
+            vector<pair<int, int>> to_check;
+            int i, j;
+            i=x;
+            j=0;
+            while(i>=0 && i<8 && j>=0 && j<8){
+                to_check.push_back({i, j});
+                j++;
+            }
+
+            i=0;
+            j=y;
+            while(i>=0 && i<8 && j>=0 && j<8){
+                to_check.push_back({i, j});
+                i++;
+            }
+
+            if(x+y < 8){
+                i = x+y;
+                j = 0;
+            }
+            else{
+                i = 7;
+                j = x+y - 7;
+            }
+            while(i>=0 && i<8 && j>=0 && j<8){
+                to_check.push_back({i, j});
+                i--;
+                j++;
+            }
+
+            if(x-y < 0){
+                i = 0;
+                j = y-x;
+            }
+            else{
+                i = x-y;
+                j = 0;
+            }
+            while(i>=0 && i<8 && j>=0 && j<8){
+                to_check.push_back({i, j});
+                i++;
+                j++;
+            }
+
+            vector<string> possibilities = check_for_piece(to_check, symbol);
+            return possibilities;
+        };
+
+        mv = get_move(possible_origin, symbol);
+    }
+
+    // King move
+    else if(move[0] == 'K'){
+        char symbol = turn==0 ? 'K' : 'k';
+
+        auto possible_origin = [&brd, turn, symbol, &check_for_piece](int x, int y) -> vector<string>{
+            vector<pair<int, int>> to_check = {
+                {x+1, y+1},
+                {x+1, y-1},
+                {x-1, y+1},
+                {x-1, y-1},
+                {x+1,  y },
+                {x-1,  y },
+                { x , y+1},
+                { x , y-1},
+            };
+            return check_for_piece(to_check, symbol);
+        };
+
+        mv = get_move(possible_origin, symbol);
+    }
+
+    // Pawn move
+    else {
+        char symbol = turn==0 ? 'P' : 'p';
+
+        // En Passant handling
+        if(move.find(" e.p.") != string::npos){
+            auto possible_origin = [&brd, turn, symbol, &check_for_piece](int x, int y) -> vector<string>{
+                int dir = (turn == 0 ? 1 : -1);
+                vector<pair<int, int>> to_check = {
+                    {x+dir, y-1},
+                    {x+dir, y+1},
+                };
+                return check_for_piece(to_check, symbol);
+            };
+            move = move.substr(0, move.find(" e.p."));
+            mv = get_move(possible_origin, symbol);
+            replace(mv.begin(), mv.end(), 'X', 'Y');
+            replace(mv.begin(), mv.end(), 'x', 'y');
+        }
+        else if(move.find("=") != string::npos){ // promotion
+            function<vector<string>(int, int)> possible_origin;
+            
+            if(move.find("x") != string::npos){ // kill promotion
+                possible_origin = [&brd, turn, symbol, &check_for_piece](int x, int y) -> vector<string>{
+                    int dir = (turn == 0 ? 1 : -1);
+                    vector<pair<int, int>> to_check = {
+                        {x+dir, y-1},
+                        {x+dir, y+1},
+                    };
+                    return check_for_piece(to_check, symbol);
+                };
+            } 
+            else {
+                possible_origin = [&brd, turn, symbol, &check_for_piece](int x, int y) -> vector<string>{
+                    int dir = (turn == 0 ? 1 : -1);
+                    vector<pair<int, int>> to_check = {
+                        {x+dir, y},
+                    };
+                    return check_for_piece(to_check, symbol);
+                };
+            }
+            char promoted_to = move.back();
+            move = move.substr(0, move.find("="));
+            mv = get_move(possible_origin, symbol);
+            mv.push_back(promoted_to);
+        }
+        else { // normal pawn move
+            function<vector<string>(int, int)> possible_origin;
+            if(move.find("x") != string::npos){
+                possible_origin = [&brd, turn, symbol, &check_for_piece](int x, int y) -> vector<string>{
+                    int dir = (turn == 0 ? 1 : -1);
+                    vector<pair<int, int>> to_check = {
+                        {x+dir, y-1},
+                        {x+dir, y+1},
+                    };
+                    return check_for_piece(to_check, symbol);
+                };
+            }
+            else {
+                possible_origin = [&brd, turn, symbol, &check_for_piece](int x, int y) -> vector<string>{
+                    int dir = (turn == 0 ? 1 : -1);
+                    vector<pair<int, int>> to_check = {
+                        {x+dir, y},
+                    };
+                    if(turn == 0 && x == 4)
+                        to_check.push_back({x+2*dir, y});
+                    if(turn == 1 && x == 3)
+                        to_check.push_back({x+2*dir, y});
+                    return check_for_piece(to_check, symbol);
+                };
+            }
+            mv = get_move(possible_origin, symbol);
+            if(mv[2] == '2' && mv[4] == '4')
+                mv.insert(mv.begin()+3, 'Z');
+            if(mv[2] == '7' && mv[4] == '5')
+                mv.insert(mv.begin()+3, 'z');
+        }
+    }
+
+
+    mv += suffix;
+    return mv;
+}

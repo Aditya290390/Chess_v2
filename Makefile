@@ -25,7 +25,7 @@ function_testing.o: function_test.cpp
 	$(CC) $(CFLAGS) -c -g -o $@ $<
 
 clean:
-	$(RM) *.o $(TARG).exe $(TEST_TARG)
+	$(RM) *.o $(TARG).exe $(TARG) $(TEST_TARG)
 
 $(TEST_TARG): $(DEPS2)
 	$(CC) $(CFLAGS) -o $@ $^

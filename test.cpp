@@ -4,6 +4,7 @@
 #include "functions.h"
 #include "search.h"
 #include <chrono>
+#include <cassert>
 using namespace std;
 using namespace std::chrono;
 
@@ -29,6 +30,13 @@ void gameTesting(string fen)
         #else
         system("clear");
         #endif
+
+
+        auto board = gs.return_board();
+        str = convertToMv(str, board, 0);
+        // cout<<str<<endl;
+        
+
         gs.input_FEN(gs.simulateOneMove(str));
         int n_mat = get_material(gs.return_board());
         if (n_mat < material && !matMap[material].empty())
@@ -119,8 +127,116 @@ void positionTesting(string fen)
     // cout << "Old eval: " << p.second << " " << p.first << endl;
 }
 
+void convertMoveTesting(){
+    vector<vector<char>> brd;
+    brd = {
+        {'r','n','b','q','k','b','n','r'},
+        {'p','p','p','p','p','p','p','p'},
+        {'.','.','.','.','.','.','.','.'},
+        {'.','.','.','.','.','.','.','.'},
+        {'.','.','.','.','P','.','.','.'},
+        {'.','.','.','.','.','.','.','.'},
+        {'P','P','P','P','.','P','P','P'},
+        {'R','N','B','Q','K','B','N','R'},
+    };
+    assert(convertToMv("Na3", brd, 0) == "Nb1a3");
+    assert(convertToMv("Bc4", brd, 0) == "Bf1c4");
+    
+    brd = {
+        {'r','n','b','q','k','b','n','r'},
+        {'p','p','p','.','p','p','p','p'},
+        {'.','.','.','.','.','.','.','.'},
+        {'.','.','.','p','.','.','.','.'},
+        {'.','.','.','.','.','.','.','.'},
+        {'.','.','N','.','.','.','.','.'},
+        {'P','P','P','P','P','P','P','P'},
+        {'R','.','B','Q','K','B','N','R'},
+    };
+    assert(convertToMv("Nxd5", brd, 0) == "Nc3Xd5");
+
+    brd = {
+        {'r','n','b','q','k','b','n','r'},
+        {'p','p','p','.','p','p','p','.'},
+        {'.','.','.','.','.','.','.','p'},
+        {'.','.','.','p','.','.','.','.'},
+        {'.','.','.','.','.','N','.','.'},
+        {'.','.','N','.','.','.','.','.'},
+        {'P','P','P','P','P','P','P','P'},
+        {'R','.','B','Q','K','B','.','R'},
+    };
+    assert(convertToMv("Ncxd5", brd, 0) == "Nc3Xd5");
+    assert(convertToMv("Nfxd5", brd, 0) == "Nf4Xd5");
+    assert(convertToMv("N3xd5", brd, 0) == "Nc3Xd5");
+    assert(convertToMv("N4xd5", brd, 0) == "Nf4Xd5");
+
+    brd = {
+        {'r','n','b','q','k','b','n','r'},
+        {'p','p','p','p','p','p','p','.'},
+        {'.','.','.','.','.','.','.','p'},
+        {'.','.','N','.','.','.','.','.'},
+        {'.','.','.','.','.','.','.','.'},
+        {'.','.','N','.','.','.','.','.'},
+        {'P','P','P','P','P','P','P','P'},
+        {'R','.','B','Q','K','B','.','R'},
+    };
+    assert(convertToMv("N3e4", brd, 0) == "Nc3e4");
+    assert(convertToMv("N5e4", brd, 0) == "Nc5e4");
+
+    brd = {
+        {'r','n','b','q','k','b','n','r'},
+        {'p','p','p','p','.','.','p','p'},
+        {'.','.','.','.','p','p','.','.'},
+        {'.','.','.','.','.','.','.','.'},
+        {'.','.','B','.','P','.','.','.'},
+        {'.','.','.','.','.','.','.','.'},
+        {'.','P','P','P','.','P','P','P'},
+        {'R','N','B','Q','K','.','N','R'},
+    };
+    assert(convertToMv("Bxe6", brd, 0) == "Bc4Xe6");
+    assert(convertToMv("Ra6", brd, 0) == "Ra1a6");
+    assert(convertToMv("Rxa7", brd, 0) == "Ra1Xa7");
+
+    brd = {
+        {'Q','.','Q','.','.','.','.','.'},
+        {'.','p','.','.','.','.','.','.'},
+        {'Q','.','Q','.','.','.','.','.'},
+        {'.','.','.','p','.','R','.','.'},
+        {'.','.','.','.','.','.','K','p'},
+        {'.','B','.','.','.','.','.','.'},
+        {'.','.','.','R','.','.','B','.'},
+        {'.','.','.','.','.','.','.','.'},
+    };
+    assert(convertToMv("Rdxd5", brd, 0) == "Rd2Xd5");
+    assert(convertToMv("R2xd5", brd, 0) == "Rd2Xd5");
+    assert(convertToMv("Rfxd5", brd, 0) == "Rf5Xd5");
+    assert(convertToMv("R5xd5", brd, 0) == "Rf5Xd5");
+    assert(convertToMv("R5f2", brd, 0) == "Rf5f2");
+    assert(convertToMv("B3xd5", brd, 0) == "Bb3Xd5");
+    assert(convertToMv("Qa8xb7", brd, 0) == "Qa8Xb7");
+    assert(convertToMv("Kxh4", brd, 0) == "Kg4Xh4");
+
+    brd = {
+        {'.','.','.','.','r','.','.','.'},
+        {'.','.','.','P','.','P','.','.'},
+        {'.','.','p','.','.','.','.','.'},
+        {'.','P','p','P','.','.','.','.'},
+        {'.','.','.','.','.','.','.','.'},
+        {'.','.','.','.','.','.','.','.'},
+        {'P','.','P','.','P','.','P','P'},
+        {'.','.','.','.','.','.','.','.'},
+    };
+    assert(convertToMv("e4", brd, 0) == "Pe2Ze4");
+    assert(convertToMv("h3", brd, 0) == "Ph2h3");
+    assert(convertToMv("f8=Q", brd, 0) == "Pf7f8Q");
+    assert(convertToMv("f8=Q", brd, 0) == "Pf7f8Q");
+    assert(convertToMv("bxc6 e.p.", brd, 0) == "Pb5Yc6");
+    assert(convertToMv("dxc6", brd, 0) == "Pd5Xc6");
+}
+
 int main()
 {
+    convertMoveTesting();
+
     string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"; /* Starting position */
     // string fen = "8/1k6/8/8/8/8/1K6/2RR4 w - - 0 1"; /* Endgame Position */
     // string fen = "r1bqkbnr/pppppppp/8/8/3nP3/8/PPP2PPP/RNBQKBNR w KQkq - 0 1"; /* Middlegame position*/
