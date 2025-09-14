@@ -1,5 +1,5 @@
 CC = g++
-CFLAGS = -O3 -std=c++17
+CFLAGS = -O3 -std=c++23
 TARG = Test
 TEST_TARG = func_me_up
 

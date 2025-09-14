@@ -233,6 +233,28 @@ void convertMoveTesting(){
     assert(convertToMv("dxc6", brd, 0) == "Pd5Xc6");
 }
 
+void playOneNewMoveTesting() {
+    string fen;
+    getline(cin, fen);
+    while (fen != "exit") {
+        GameState gs(fen); 
+        gs.display_board_FEN();
+        cout << "Your move: ";
+        string mv;
+        cin >> mv;
+        auto board = gs.return_board();
+        mv = convertToMv(mv, board, 0);
+        cout << mv << endl;
+        getchar();
+        // cout<<mv<<endl;
+        gs.input_FEN(gs.simulateOneMove(mv));
+        string changed_str = gs.get_FEN();
+        cout << changed_str << endl;
+        gs.display_board_FEN();
+        getline(cin, fen);
+    }
+}
+
 int main()
 {
     convertMoveTesting();
@@ -243,7 +265,8 @@ int main()
     // getline(cin, fen);
     // Board_FEN v(fen);
     // v.display_board_FEN();
-    gameTesting(fen);
+    // gameTesting(fen);
+    playOneNewMoveTesting();
     // gameTesting("2k5/5P2/3K4/8/8/8/8/8 w - - 0 1");
     // positionTesting(fen);
     // positionTesting("2k5/5P2/3K4/8/8/8/8/8 w - - 0 1");

@@ -665,7 +665,12 @@ string stdToV2(string fen, string std_move)
 string convertToMv(string move, vector<vector<char>>& brd, bool turn){
     string mv = ""; // according to our convention
 
-    erase_if(move, [](char c){return c == '!' || c == '?'});
+    move.erase(
+        std::remove_if(move.begin(), move.end(),
+            [](char c){ return c == '!' || c == '?'; }),
+        move.end()
+    );
+
 
     // castling
     if(move == "O-O"){
